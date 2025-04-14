@@ -128,7 +128,7 @@ public:
         cl_socket = socket(AF_INET, SOCK_STREAM, 0);
         client_addr.sin_family = AF_INET;
         client_addr.sin_port = htons(5000);
-        client_addr.sin_addr.s_addr = inet_addr("10.1.177.46");
+        client_addr.sin_addr.s_addr = inet_addr("Add server IPv4 here");
     }
 
     void client_conn()
