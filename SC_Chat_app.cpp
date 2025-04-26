@@ -1,46 +1,57 @@
 #include <iostream>
 #include <fstream>
 #include <winsock2.h>
+#include <cstdlib>
 using namespace std;
 
-class file {
+class file
+{
     fstream data;
 
 public:
-    file() {
-        data.open("Chat.txt", ios::out | ios::app);
+    file()
+    {
+        data.open("Chat.txt", ios::out);
     }
 
-    void sender_message(string &s) {
+    void sender_message(string &s)
+    {
         data << s << "\n";
     }
 
-    void recieve_message(string s) {
+    void recieve_message(string s)
+    {
         data << s << "\n";
     }
 
-    ~file() {
+    ~file()
+    {
+
         data.close();
     }
 };
 
-class server {
+class server
+{
     SOCKET server_socket;
     SOCKET client_socket;
     string send_message;
     char rec_message[5000];
     char name[1024];
     int d;
+    file f;
 
 public:
     string client_name;
 
-    server() {
+    server()
+    {
         WSADATA wsa_var;
         WSAStartup(MAKEWORD(2, 2), &wsa_var);
     }
-
-    void connection() {
+    server(int a, int b) {}
+    void connection()
+    {
         server_socket = socket(AF_INET, SOCK_STREAM, 0);
         struct sockaddr_in serv;
         serv.sin_family = AF_INET;
@@ -50,7 +61,8 @@ public:
         listen(server_socket, 5);
     }
 
-    void lis_for_conn() {
+    void lis_for_conn()
+    {
         sockaddr_in client_addr;
         int n = sizeof(client_addr);
         client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &n);
@@ -60,33 +72,39 @@ public:
         cout << client_name << " connected with you\n";
     }
 
-    string take_mess() {
+    string take_mess()
+    {
         string s;
         cout << "Raffay:";
         getline(cin, s);
         return s;
     }
 
-    void encrypt(char *buffer, int size) {
+    void encrypt(char *buffer, int size)
+    {
         char key = 0;
-        for (int i = 0, n = 1; i < size; i++, n++) {
+        for (int i = 0, n = 1; i < size; i++, n++)
+        {
             key = 6 * n - 1;
             *(buffer + i) = ~(*(buffer + i));
             *(buffer + i) ^= key;
         }
     }
 
-    void decrypt(char *buffer, int size) {
+    void decrypt(char *buffer, int size)
+    {
         char key = 6 * size - 1;
-        for (int i = size - 1; i >= 0; i--) {
+        for (int i = size - 1; i >= 0; i--)
+        {
             *(buffer + i) ^= key;
             *(buffer + i) = ~(*(buffer + i));
             key -= 6;
         }
     }
 
-    void send_mess(string s) {
-        file f;
+    void send_mess(string s)
+    {
+
         string log = "Raffay: " + s;
         f.sender_message(log);
 
@@ -94,18 +112,21 @@ public:
         send(client_socket, s.c_str(), s.length(), 0);
     }
 
-    void receive(bool &t) {
-        file f;
+    void receive(bool &t)
+    {
+
         char s[5000];
         int bytesReceived = recv(client_socket, s, sizeof(s), 0);
-        if (bytesReceived > 0) {
+        if (bytesReceived > 0)
+        {
             decrypt(s, bytesReceived);
             s[bytesReceived] = '\0';
             string r = client_name + ": " + string(s);
             cout << r << endl;
             f.recieve_message(r);
         }
-        if (s[0] == ';') {
+        if (s[0] == ';')
+        {
             closesocket(client_socket);
             closesocket(server_socket);
             WSACleanup();
@@ -113,19 +134,20 @@ public:
             return;
         }
     }
+    friend void helper(server &A);
 
-    ~server() {
+    ~server()
+    {
         string s = "\nChat ended, other person left\n";
         send(client_socket, s.c_str(), s.length(), 0);
         closesocket(client_socket);
         closesocket(server_socket);
         WSACleanup();
     }
-
-    friend class client;
 };
 
-class client {
+class client
+{
 private:
     SOCKET cl_socket;
     string name_to_send;
@@ -134,29 +156,36 @@ private:
     string my_name = "";
     server obj;
     struct sockaddr_in client_addr;
+    file f;
 
 public:
-    ~client() {
-        file t;
+    ~client()
+    {
+
         string temp = "\nChat ended, other person left\n";
         send(cl_socket, temp.c_str(), temp.length(), 0);
         closesocket(cl_socket);
         WSACleanup();
     }
 
-    void conn() {
+    void conn()
+    {
         cl_socket = socket(AF_INET, SOCK_STREAM, 0);
         client_addr.sin_family = AF_INET;
         client_addr.sin_port = htons(5000);
         client_addr.sin_addr.s_addr = inet_addr("127.1.0.0");
     }
 
-    void client_conn() {
-        if (connect(cl_socket, (struct sockaddr *)&client_addr, sizeof(client_addr)) == SOCKET_ERROR) {
+    void client_conn()
+    {
+        if (connect(cl_socket, (struct sockaddr *)&client_addr, sizeof(client_addr)) == SOCKET_ERROR)
+        {
             cerr << "Connection failed!" << endl;
             closesocket(cl_socket);
             WSACleanup();
-        } else {
+        }
+        else
+        {
             cout << "Raffay Connected\n";
             cout << "Enter your name:\n";
             getline(cin, my_name);
@@ -164,21 +193,24 @@ public:
         }
     }
 
-    void send_mess() {
-        file t;
+    void send_mess()
+    {
+
         string temp;
         cout << my_name << ": ";
         getline(cin, temp);
         string s = my_name + ":" + temp;
-        t.sender_message(s);
+        f.sender_message(s);
         obj.encrypt(&temp[0], temp.size());
         send(cl_socket, temp.c_str(), temp.length(), 0);
     }
 
-    void receive_mess(bool &t) {
-        file f;
+    void receive_mess(bool &t)
+    {
+
         int bytesReceived = recv(cl_socket, data_receive, sizeof(data_receive), 0);
-        if (bytesReceived > 0) {
+        if (bytesReceived > 0)
+        {
             data_receive[bytesReceived] = '\0';
             obj.decrypt(data_receive, bytesReceived);
 
@@ -186,7 +218,8 @@ public:
             string s = "Raffay: " + string(data_receive);
             f.recieve_message(s);
         }
-        if (data_receive[0] == ';') {
+        if (data_receive[0] == ';')
+        {
             closesocket(cl_socket);
             WSACleanup();
             t = true;
@@ -195,41 +228,50 @@ public:
     }
 };
 
-int server_module() {
+int server_module()
+{
     bool yes = false;
     server a;
     a.connection();
     a.lis_for_conn();
     system("cls");
-    for (int i = 0;; i++) {
+    for (int i = 0;; i++)
+    {
         a.send_mess(a.take_mess());
         a.receive(yes);
-        if (yes) {
+        if (yes)
+        {
             cout << "Chat Closing, other person left\n";
             Sleep(2000);
+            system("start notepad Chat.txt");
             return 0;
         }
     }
 }
 
-int client_module() {
+int client_module()
+{
     bool yes = false;
     client a;
     a.conn();
     a.client_conn();
     system("cls");
-    for (int i = 0;; i++) {
+    for (int i = 0;; i++)
+    {
         a.receive_mess(yes);
-        if (yes) {
+        if (yes)
+        {
             cout << "Chat closing, other person left\n";
             Sleep(2000);
+            system("start notepad Chat.txt");
             return 0;
         }
         a.send_mess();
     }
 }
 
-int main() {
+int main()
+{
 m:
     cout << R"(
 
@@ -255,13 +297,20 @@ m:
     int choice;
     cin >> choice;
     cin.ignore();
-    if (choice != 1 && choice != 2) {
+    if (choice != 1 && choice != 2)
+    {
         cout << "Invalid choice\n, Going back to main menu:\n";
         Sleep(800);
         goto m;
-    } else if (choice == 1) {
+    }
+    else if (choice == 1)
+    {
         client_module();
-    } else {
+        
+    }
+    else
+    {
         server_module();
+        
     }
 }
